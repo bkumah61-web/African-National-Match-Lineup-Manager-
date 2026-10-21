@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>African Nations Football - Live Match & FIFO Substitution Queue</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.85);
+            border-color: rgba(234, 179, 8, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Realistic Football Pitch Design */
+        .football-pitch {
+            background: radial-gradient(circle at center, #065f46 0%, #022c22 100%);
+            border: 2px solid rgba(234, 179, 8, 0.4);
+            position: relative;
+        }
+
+        .pitch-lines {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.07) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.07) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        .pitch-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90px;
+            height: 90px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .pitch-center-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: rgba(255,255,255,0.2);
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #eab308;
+        }
+
+        .glow-gold {
+            box-shadow: 0 0 25px rgba(234, 179, 8, 0.25);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-gray-800 px-4 py-3 sm:px-8">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-500 via-green-600 to-red-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg glow-gold">
+                    🌍
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide bg-gradient-to-r from-yellow-400 via-emerald-300 to-green-400 bg-clip-text text-transparent">
+                        African Nations Match & Lineup Queue Manager
+                    </h1>
+                    <p class="text-xs text-gray-400">Live Pitch Visualization, Opponents & FIFO Substitution Queue</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="openInfoModal()" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-yellow-400 border border-yellow-500/30 font-medium flex items-center gap-2 transition">
+                    <i class="fa-solid fa-code-branch"></i>
+                    <span>Queue FIFO Logic</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Layout Structure -->
+    <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+        <!-- LEFT COLUMN: Country Select, Opponent Fixture & Squad Bench/Field Management (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+
+            <!-- Country & Opponent Selector Card -->
+            <div class="glass-panel p-5 rounded-2xl space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] text-yellow-400 font-bold uppercase mb-1">Select Your African Country</label>
+                        <select id="homeCountrySelect" onchange="changeMatchFixture()" class="w-full px-3 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-xs font-semibold text-white focus:border-yellow-500 focus:outline-none transition">
+                            <option value="GH">🇬🇭 Ghana (Black Stars)</option>
+                            <option value="NG">🇳🇬 Nigeria (Super Eagles)</option>
+                            <option value="SN">🇸🇳 Senegal (Lions of Teranga)</option>
+                            <option value="MA">🇲🇦 Morocco (Atlas Lions)</option>
+                            <option value="EG">🇪🇬 Egypt (Pharaohs)</option>
+                            <option value="CI">🇨🇮 Ivory Coast (Elephants)</option>
+                            <option value="CM">🇨🇲 Cameroon (Indomitable Lions)</option>
+                            <option value="DZ">🇩🇿 Algeria (Desert Foxes)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] text-yellow-400 font-bold uppercase mb-1">Next Fixture Opponent</label>
+                        <div id="opponentDisplayBox" class="w-full px-3 py-2.5 rounded-xl bg-gray-900/90 border border-gray-700 text-xs font-bold text-emerald-400 flex items-center gap-2">
+                            <span>🇳🇬 Nigeria (Super Eagles)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search & Filter -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" id="searchInput" oninput="searchPlayers()" placeholder="Search player name, club, or position..." 
+                            class="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-900/80 border border-gray-700/60 focus:border-yellow-500 focus:outline-none text-xs text-gray-100 placeholder-gray-500 transition">
+                    </div>
+                </div>
+
+                <!-- Status Filter Tabs -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+                    <span class="text-gray-400 font-medium mr-1">Squad Filter:</span>
+                    <button onclick="filterStatus('All')" class="status-tab bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 px-3 py-1 rounded-full font-medium transition hover:bg-yellow-500/30">All Players</button>
+                    <button onclick="filterStatus('StartingXI')" class="status-tab bg-gray-800 text-gray-300 border border-gray-700 px-3 py-1 rounded-full transition hover:bg-gray-700">Starting XI (On Field)</button>
+                    <button onclick="filterStatus('Bench')" class="status-tab bg-gray-800 text-gray-300 border border-gray-700 px-3 py-1 rounded-full transition hover:bg-gray-700">Sub Bench</button>
+                </div>
+            </div>
+
+            <!-- Squad Roster & Selection Pool -->
+            <div class="glass-panel p-5 rounded-2xl flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="rosterTitle" class="text-base font-bold text-gray-100 flex items-center gap-2">
+                        <i class="fa-solid fa-users text-yellow-400"></i>
+                        <span>National Team Roster (Starting XI & Bench)</span>
+                    </h2>
+                    <span id="rosterCount" class="text-xs text-gray-400 bg-gray-800/80 px-2.5 py-1 rounded-md border border-gray-700">0 players</span>
+                </div>
+
+                <div id="rosterContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto max-h-[380px] pr-1">
+                    <!-- Dynamic Roster Cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Visual Football Pitch, Match Score & FIFO Substitution Queue (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+
+            <!-- Live Pitch & Match Scoreboard Deck -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col items-center text-center relative overflow-hidden glow-gold border-yellow-500/30 football-pitch">
+                <div class="pitch-lines"></div>
+                <div class="pitch-center-line"></div>
+                <div class="pitch-circle"></div>
+
+                <!-- Match Header Badge -->
+                <div class="z-10 flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/40 px-3 py-1 rounded-full text-yellow-300 text-xs font-semibold mb-3">
+                    <span class="w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span>
+                    <span id="matchTypeBadge">AFCON QUALIFIER: LIVE MATCH</span>
+                </div>
+
+                <!-- Scoreboard -->
+                <div class="z-10 bg-black/70 px-4 py-3 rounded-xl border border-white/10 mb-4 w-full flex items-center justify-between">
+                    <div class="text-left flex-1">
+                        <h4 class="text-[10px] text-gray-400 font-bold uppercase">Home Team</h4>
+                        <p id="pitchHomeName" class="text-xs font-extrabold text-white truncate">🇬🇭 Ghana</p>
+                    </div>
+                    <div class="text-center px-3">
+                        <span class="text-xl font-black text-yellow-400">2 - 1</span>
+                        <p class="text-[10px] text-emerald-400 font-mono animate-pulse">81' MIN</p>
+                    </div>
+                    <div class="text-right flex-1">
+                        <h4 class="text-[10px] text-gray-400 font-bold uppercase">Away Opponent</h4>
+                        <p id="pitchAwayName" class="text-xs font-extrabold text-white truncate">🇳🇬 Nigeria</p>
+                    </div>
+                </div>
+
+                <!-- Visual Starting XI Field Display Box -->
+                <div class="z-10 w-full bg-emerald-950/80 p-3 rounded-xl border border-yellow-500/30 text-left mb-3">
+                    <div class="flex justify-between items-center mb-2 pb-1 border-b border-emerald-800/60">
+                        <span class="text-[11px] text-yellow-300 font-bold"><i class="fa-solid fa-chess-board mr-1"></i>Starting XI (On Field)</span>
+                        <span id="fieldCountBadge" class="text-[10px] text-gray-300 bg-emerald-900 px-2 py-0.5 rounded">11 Players</span>
+                    </div>
+                    <div id="fieldPlayersContainer" class="flex flex-wrap gap-1.5 max-h-[110px] overflow-y-auto pr-1">
+                        <!-- Dynamic Field Badges -->
+                    </div>
+                </div>
+
+                <!-- Next Sub Ready Card -->
+                <div class="z-10 w-full bg-gray-950/90 p-3.5 rounded-xl border border-yellow-500/40 text-left flex items-center justify-between">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center font-bold text-sm border border-yellow-500/30 flex-shrink-0">
+                            <i class="fa-solid fa-right-left"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <span class="text-[9px] text-yellow-400 font-bold tracking-wider block">NEXT SUB UP [INDEX 0]</span>
+                            <h3 id="nextSubTitle" class="text-xs font-extrabold text-white truncate">No player queued</h3>
+                            <p id="nextSubDetail" class="text-[10px] text-gray-400 truncate">Queue bench players below</p>
+                        </div>
+                    </div>
+                    <button onclick="executeSubstitution()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-gray-950 font-extrabold text-xs shadow-lg transition active:scale-95 whitespace-nowrap flex-shrink-0">
+                        Make Sub ⚽
+                    </button>
+                </div>
+            </div>
+
+            <!-- Substitution Queue Structure Card -->
+            <div class="glass-panel p-5 rounded-2xl flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3 pb-3 border-b border-gray-800">
+                    <div>
+                        <h2 class="text-sm font-bold text-gray-100 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ol text-yellow-400"></i>
+                            <span>Substitution Queue (FIFO)</span>
+                        </h2>
+                        <p class="text-[11px] text-gray-400">First-In, First-Out Match Tactical Order</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="queueCountBadge" class="bg-yellow-500/20 text-yellow-300 text-xs px-2.5 py-0.5 rounded-full border border-yellow-500/30 font-semibold">0 queued</span>
+                        <button onclick="clearQueue()" class="text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1 rounded-md border border-rose-500/20 transition">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Queue List -->
+                <div id="queueContainer" class="flex-1 overflow-y-auto max-h-[200px] space-y-2 pr-1">
+                    <!-- Dynamic Queue items -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Queue Concept Info Modal -->
+    <div id="infoModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel bg-gray-900 border-gray-700 max-w-lg w-full rounded-2xl p-6 relative shadow-2xl">
+            <button onclick="closeInfoModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-futbol"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Queue FIFO Logic & Architecture</h3>
+                    <p class="text-xs text-yellow-400">Match Management Data Structure Explained</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3 text-xs text-gray-300 leading-relaxed max-h-[350px] overflow-y-auto pr-2">
+                <div>
+                    <h4 class="text-yellow-400 font-bold mb-0.5">1. About the Queue</h4>
+                    <p>In computer science and real-world tactical operations, a <strong>Queue</strong> is a linear data structure that follows the <strong>FIFO (First-In, First-Out)</strong> principle. The element added first is the first one processed.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-yellow-400 font-bold mb-0.5">2. Positions</h4>
+                    <p><strong>Front (Index 0):</strong> The head of the queue representing the active element ready for immediate execution (the next player ready to sub onto the pitch).<br>
+                    <strong>Rear (End):</strong> The tail where newly queued players are appended.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-yellow-400 font-bold mb-0.5">3. WHY QUEUE is USED</h4>
+                    <p>Ensures strict chronological order, prevents tactical confusion during high-pressure matches, and provides fair, reliable squad management.</p>
+                </div>
+
+                <div>
+                    <h4 class="text-yellow-400 font-bold mb-0.5">4. THE FLOW</h4>
+                    <p><strong>Enqueue (`push`):</strong> Appends bench player to the <strong>rear</strong>.<br>
+                    <strong>Priority Next (`unshift`):</strong> Places player at <strong>Index 0</strong> for urgent substitution.<br>
+                    <strong>Dequeue (`shift`):</strong> Removes player from <strong>Index 0</strong> to step onto the field.</p>
+                </div>
+            </div>
+
+            <button onclick="closeInfoModal()" class="w-full mt-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold text-xs transition">
+                Got It, Let's Play!
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800/80 py-4 px-6 text-center text-xs text-gray-500 glass-panel">
+        <p>African Nations Match & Lineup Queue Manager • Built with JavaScript FIFO Queue & Tailwind CSS</p>
+    </footer>
+
+<script>
+    /* ==========================================================================
+       1. COMPREHENSIVE AFRICAN NATIONAL TEAMS DATABASE & OPPONENTS
+       ========================================================================== */
+    const africanNationsDatabase = {
+        'GH': {
+            name: 'Ghana',
+            flag: '🇬🇭',
+            opponent: '🇳🇬 Nigeria (Super Eagles)',
+            squad: [
+                // Starting XI (On Field)
+                { id: 'gh-1', name: 'Lawrence Ati-Zigi', position: 'Goalkeeper', club: 'St. Gallen', number: '#1', isOnField: true },
+                { id: 'gh-2', name: 'Tariq Lamptey', position: 'Defender', club: 'Brighton', number: '#2', isOnField: true },
+                { id: 'gh-3', name: 'Alexander Djiku', position: 'Defender', club: 'Fenerbahçe', number: '#23', isOnField: true },
+                { id: 'gh-4', name: 'Mohammed Salisu', position: 'Defender', club: 'Monaco', number: '#4', isOnField: true },
+                { id: 'gh-5', name: 'Gideon Mensah', position: 'Defender', club: 'Auxerre', number: '#14', isOnField: true },
+                { id: 'gh-6', name: 'Thomas Partey', position: 'Midfielder', club: 'Arsenal', number: '#5', isOnField: true },
+                { id: 'gh-7', name: 'Mohammed Kudus', position: 'Midfielder', club: 'West Ham United', number: '#20', isOnField: true },
+                { id: 'gh-8', name: 'Elisha Owusu', position: 'Midfielder', club: 'Auxerre', number: '#21', isOnField: true },
+                { id: 'gh-9', name: 'Jordan Ayew', position: 'Forward', club: 'Leicester City', number: '#9', isOnField: true },
+                { id: 'gh-10', name: 'Inaki Williams', position: 'Forward', club: 'Athletic Bilbao', number: '#19', isOnField: true },
+                { id: 'gh-11', name: 'Ernest Nuamah', position: 'Forward', club: 'Lyon', number: '#17', isOnField: true },
+                // Sub Bench
+                { id: 'gh-12', name: 'Joseph Wollacott', position: 'Goalkeeper', club: 'Crawley Town', number: '#12', isOnField: false },
+                { id: 'gh-13', name: 'Alidu Seidu', position: 'Defender', club: 'Rennes', number: '#18', isOnField: false },
+                { id: 'gh-14', name: 'Denis Odoi', position: 'Defender', club: 'Antwerp', number: '#3', isOnField: false },
+                { id: 'gh-15', name: 'Salis Abdul Samed', position: 'Midfielder', club: 'Lens', number: '#6', isOnField: false },
+                { id: 'gh-16', name: 'Ibrahim Sulemana', position: 'Midfielder', club: 'Atalanta', number: '#8', isOnField: false },
+                { id: 'gh-17', name: 'Antoine Semenyo', position: 'Forward', club: 'Bournemouth', number: '#11', isOnField: false },
+                { id: 'gh-18', name: 'Brandon Thomas-Asante', position: 'Forward', club: 'Coventry City', number: '#24', isOnField: false }
+            ]
+        },
+        'NG': {
+            name: 'Nigeria',
+            flag: '🇳🇬',
+            opponent: '🇬🇭 Ghana (Black Stars)',
+            squad: [
+                { id: 'ng-1', name: 'Stanley Nwabali', position: 'Goalkeeper', club: 'Chippa United', number: '#23', isOnField: true },
+                { id: 'ng-2', name: 'William Troost-Ekong', position: 'Defender', club: 'Al-Kholood', number: '#5', isOnField: true },
+                { id: 'ng-3', name: 'Calvin Bassey', position: 'Defender', club: 'Fulham', number: '#21', isOnField: true },
+                { id: 'ng-4', name: 'Semi Ajayi', position: 'Defender', club: 'West Brom', number: '#6', isOnField: true },
+                { id: 'ng-5', name: 'Ola Aina', position: 'Defender', club: 'Nottingham Forest', number: '#2', isOnField: true },
+                { id: 'ng-6', name: 'Wilfred Ndidi', position: 'Midfielder', club: 'Leicester City', number: '#4', isOnField: true },
+                { id: 'ng-7', name: 'Alex Iwobi', position: 'Midfielder', club: 'Fulham', number: '#17', isOnField: true },
+                { id: 'ng-8', name: 'Frank Onyeka', position: 'Midfielder', club: 'Augsburg', number: '#8', isOnField: true },
+                { id: 'ng-9', name: 'Victor Osimhen', position: 'Forward', club: 'Galatasaray', number: '#9', isOnField: true },
+                { id: 'ng-10', name: 'Ademola Lookman', position: 'Forward', club: 'Atalanta', number: '#11', isOnField: true },
+                { id: 'ng-11', name: 'Samuel Chukwueze', position: 'Forward', club: 'AC Milan', number: '#7', isOnField: true },
+                // Bench
+                { id: 'ng-12', name: 'Francis Uzoho', position: 'Goalkeeper', club: 'Omonia', number: '#1', isOnField: false },
+                { id: 'ng-13', name: 'Bright Osayi-Samuel', position: 'Defender', club: 'Fenerbahçe', number: '#12', isOnField: false },
+                { id: 'ng-14', name: 'Chidozie Awaziem', position: 'Defender', club: 'FC Cincinnati', number: '#20', isOnField: false },
+                { id: 'ng-15', name: 'Raphael Onyedika', position: 'Midfielder', club: 'Club Brugge', number: '#25', isOnField: false },
+                { id: 'ng-16', name: 'Kelechi Iheanacho', position: 'Forward', club: 'Sevilla', number: '#14', isOnField: false },
+                { id: 'ng-17', name: 'Victor Boniface', position: 'Forward', club: 'Bayer Leverkusen', number: '#22', isOnField: false }
+            ]
+        },
+        'SN': {
+            name: 'Senegal',
+            flag: '🇸🇳',
+            opponent: '🇲🇦 Morocco (Atlas Lions)',
+            squad: [
+                { id: 'sn-1', name: 'Édouard Mendy', position: 'Goalkeeper', club: 'Al-Ahli', number: '#16', isOnField: true },
+                { id: 'sn-2', name: 'Kalidou Koulibaly', position: 'Defender', club: 'Al-Hilal', number: '#3', isOnField: true },
+                { id: 'sn-3', name: 'Abdou Diallo', position: 'Defender', club: 'Al-Arabi', number: '#22', isOnField: true },
+                { id: 'sn-4', name: 'Ismail Jakobs', position: 'Defender', club: 'Galatasaray', number: '#14', isOnField: true },
+                { id: 'sn-5', name: 'Krepin Diatta', position: 'Defender', club: 'Monaco', number: '#12', isOnField: true },
+                { id: 'sn-6', name: 'Pape Matar Sarr', position: 'Midfielder', club: 'Tottenham', number: '#17', isOnField: true },
+                { id: 'sn-7', name: 'Idrissa Gueye', position: 'Midfielder', club: 'Everton', number: '#5', isOnField: true },
+                { id: 'sn-8', name: 'Lamine Camara', position: 'Midfielder', club: 'Monaco', number: '#25', isOnField: true },
+                { id: 'sn-9', name: 'Sadio Mané', position: 'Forward', club: 'Al-Nassr', number: '#10', isOnField: true },
+                { id: 'sn-10', name: 'Ismaïla Sarr', position: 'Forward', club: 'Crystal Palace', number: '#18', isOnField: true },
+                { id: 'sn-11', name: 'Nicolas Jackson', position: 'Forward', club: 'Chelsea', number: '#7', isOnField: true },
+                // Bench
+                { id: 'sn-12', name: 'Mory Diaw', position: 'Goalkeeper', club: 'Clermont', number: '#23', isOnField: false },
+                { id: 'sn-13', name: 'Moussa Niakhate', position: 'Defender', club: 'Lyon', number: '#4', isOnField: false },
+                { id: 'sn-14', name: 'Formose Mendy', position: 'Defender', club: 'Lorient', number: '#2', isOnField: false },
+                { id: 'sn-15', name: 'Pathé Ciss', position: 'Midfielder', club: 'Rayo Vallecano', number: '#6', isOnField: false },
+                { id: 'sn-16', name: 'Iliman Ndiaye', position: 'Forward', club: 'Everton', number: '#13', isOnField: false },
+                { id: 'sn-17', name: 'Habib Diallo', position: 'Forward', club: 'Damac', number: '#20', isOnField: false }
+            ]
+        },
+        'MA': {
+            name: 'Morocco',
+            flag: '🇲🇦',
+            opponent: '🇸🇳 Senegal (Lions of Teranga)',
+            squad: [
+                { id: 'ma-1', name: 'Yassine Bounou', position: 'Goalkeeper', club: 'Al-Hilal', number: '#1', isOnField: true },
+                { id: 'ma-2', name: 'Achraf Hakimi', position: 'Defender', club: 'PSG', number: '#2', isOnField: true },
+                { id: 'ma-3', name: 'Nayef Aguerd', position: 'Defender', club: 'Real Sociedad', number: '#5', isOnField: true },
+                { id: 'ma-4', name: 'Romain Saïss', position: 'Defender', club: 'Al-Shabab', number: '#6', isOnField: true },
+                { id: 'ma-5', name: 'Noussair Mazraoui', position: 'Defender', club: 'Manchester United', number: '#3', isOnField: true },
+                { id: 'ma-6', name: 'Sofyan Amrabat', position: 'Midfielder', club: 'Fenerbahçe', number: '#4', isOnField: true },
+                { id: 'ma-7', name: 'Azzedine Ounahi', position: 'Midfielder', club: 'Panathinaikos', number: '#8', isOnField: true },
+                { id: 'ma-8', name: 'Brahim Díaz', position: 'Midfielder', club: 'Real Madrid', number: '#10', isOnField: true },
+                { id: 'ma-9', name: 'Hakim Ziyech', position: 'Forward', club: 'Galatasaray', number: '#7', isOnField: true },
+                { id: 'ma-10', name: 'Youssef En-Nesyri', position: 'Forward', club: 'Fenerbahçe', number: '#19', isOnField: true },
+                { id: 'ma-11', name: 'Abde Ezzalzouli', position: 'Forward', club: 'Real Betis', number: '#16', isOnField: true },
+                // Bench
+                { id: 'ma-12', name: 'Munir Mohamedi', position: 'Goalkeeper', club: 'RS Berkane', number: '#12', isOnField: false },
+                { id: 'ma-13', name: 'Chadi Riad', position: 'Defender', club: 'Crystal Palace', number: '#18', isOnField: false },
+                { id: 'ma-14', name: 'Abdelkabir Abqar', position: 'Defender', club: 'Alavés', number: '#24', isOnField: false },
+                { id: 'ma-15', name: 'Amir Richardson', position: 'Midfielder', club: 'Fiorentina', number: '#14', isOnField: false },
+                { id: 'ma-16', name: 'Ilias Akhomach', position: 'Forward', club: 'Villarreal', number: '#15', isOnField: false },
+                { id: 'ma-17', name: 'Soufiane Rahimi', position: 'Forward', club: 'Al Ain', number: '#9', isOnField: false }
+            ]
+        },
+        'EG': {
+            name: 'Egypt',
+            flag: '🇪🇬',
+            opponent: '🇨🇮 Ivory Coast (Elephants)',
+            squad: [
+                { id: 'eg-1', name: 'Mohamed El Shenawy', position: 'Goalkeeper', club: 'Al Ahly', number: '#1', isOnField: true },
+                { id: 'eg-2', name: 'Mohamed Hany', position: 'Defender', club: 'Al Ahly', number: '#3', isOnField: true },
+                { id: 'eg-3', name: 'Ramy Rabia', position: 'Defender', club: 'Al Ahly', number: '#6', isOnField: true },
+                { id: 'eg-4', name: 'Mohamed Abdelmonem', position: 'Defender', club: 'Nice', number: '#2', isOnField: true },
+                { id: 'eg-5', name: 'Ahmed Fatouh', position: 'Defender', club: 'Zamalek', number: '#13', isOnField: true },
+                { id: 'eg-6', name: 'Marwan Attia', position: 'Midfielder', club: 'Al Ahly', number: '#17', isOnField: true },
+                { id: 'eg-7', name: 'Eman Ashour', position: 'Midfielder', club: 'Al Ahly', number: '#8', isOnField: true },
+                { id: 'eg-8', name: 'Mahmoud Trezeguet', position: 'Midfielder', club: 'Al-Rayyan', number: '#7', isOnField: true },
+                { id: 'eg-9', name: 'Mohamed Salah', position: 'Forward', club: 'Liverpool', number: '#10', isOnField: true },
+                { id: 'eg-10', name: 'Mostafa Mohamed', position: 'Forward', club: 'Nantes', number: '#19', isOnField: true },
+                { id: 'eg-11', name: 'Omar Marmoush', position: 'Forward', club: 'Eintracht Frankfurt', number: '#22', isOnField: true },
+                // Bench
+                { id: 'eg-12', name: 'Mostafa Shobeir', position: 'Goalkeeper', club: 'Al Ahly', number: '#16', isOnField: false },
+                { id: 'eg-13', name: 'Yasser Ibrahim', position: 'Defender', club: 'Al Ahly', number: '#15', isOnField: false },
+                { id: 'eg-14', name: 'Ahmed Eid', position: 'Defender', club: 'Al Masry', number: '#4', isOnField: false },
+                { id: 'eg-15', name: 'Hamdi Fathi', position: 'Midfielder', club: 'Al-Wakrah', number: '#5', isOnField: false },
+                { id: 'eg-16', name: 'Zizo', position: 'Midfielder', club: 'Zamalek', number: '#14', isOnField: false },
+                { id: 'eg-17', name: 'Mostafa Fathi', position: 'Forward', club: 'Pyramids FC', number: '#20', isOnField: false }
+            ]
+        },
+        'CI': {
+            name: 'Ivory Coast',
+            flag: '🇨🇮',
+            opponent: '🇪🇬 Egypt (Pharaohs)',
+            squad: [
+                { id: 'ci-1', name: 'Yahia Fofana', position: 'Goalkeeper', club: 'Angers', number: '#1', isOnField: true },
+                { id: 'ci-2', name: 'Ghislain Konan', position: 'Defender', club: 'Al-Fayha', number: '#3', isOnField: true },
+                { id: 'ci-3', name: 'Evan Ndicka', position: 'Defender', club: 'Roma', number: '#21', isOnField: true },
+                { id: 'ci-4', name: 'Odilon Kossounou', position: 'Defender', club: 'Atalanta', number: '#7', isOnField: true },
+                { id: 'ci-5', name: 'Wilfried Singo', position: 'Defender', club: 'Monaco', number: '#17', isOnField: true },
+                { id: 'ci-6', name: 'Seko Fofana', position: 'Midfielder', club: 'Al-Ettifaq', number: '#6', isOnField: true },
+                { id: 'ci-7', name: 'Franck Kessié', position: 'Midfielder', club: 'Al-Ahli', number: '#8', isOnField: true },
+                { id: 'ci-8', name: 'Ibrahim Sangaré', position: 'Midfielder', club: 'Nottingham Forest', number: '#18', isOnField: true },
+                { id: 'ci-9', name: 'Simon Adingra', position: 'Forward', club: 'Brighton', number: '#11', isOnField: true },
+                { id: 'ci-10', name: 'Sebastien Haller', position: 'Forward', club: 'Leganés', number: '#22', isOnField: true },
+                { id: 'ci-11', name: 'Oumar Diakité', position: 'Forward', club: 'Reims', number: '#24', isOnField: true },
+                // Bench
+                { id: 'ci-12', name: 'Badra Ali Sangaré', position: 'Goalkeeper', club: 'Sekhukhune United', number: '#16', isOnField: false },
+                { id: 'ci-13', name: 'Willy Boly', position: 'Defender', club: 'Nottingham Forest', number: '#5', isOnField: false },
+                { id: 'ci-14', name: 'Christopher Opéri', position: 'Defender', club: 'Le Havre', number: '#25', isOnField: false },
+                { id: 'ci-15', name: 'Jean Seri', position: 'Midfielder', club: 'Hull City', number: '#4', isOnField: false },
+                { id: 'ci-16', name: 'Nicolas Pépé', position: 'Forward', club: 'Villarreal', number: '#19', isOnField: false },
+                { id: 'ci-17', name: 'Christian Kouamé', position: 'Forward', club: 'Fiorentina', number: '#20', isOnField: false }
+            ]
+        },
+        'CM': {
+            name: 'Cameroon',
+            flag: '🇨🇲',
+            opponent: '🇩🇿 Algeria (Desert Foxes)',
+            squad: [
+                { id: 'cm-1', name: 'André Onana', position: 'Goalkeeper', club: 'Manchester United', number: '#23', isOnField: true },
+                { id: 'cm-2', name: 'Nouhou Tolo', position: 'Defender', club: 'Seattle Sounders', number: '#3', isOnField: true },
+                { id: 'cm-3', name: 'Christopher Wooh', position: 'Defender', club: 'Rennes', number: '#21', isOnField: true },
+                { id: 'cm-4', name: 'Michael Ngadeu', position: 'Defender', club: 'Beijing Guoan', number: '#4', isOnField: true },
+                { id: 'cm-5', name: 'Jackson Tchatchoua', position: 'Defender', club: 'Hellas Verona', number: '#12', isOnField: true },
+                { id: 'cm-6', name: 'André-Frank Zambo Anguissa', position: 'Midfielder', club: 'Napoli', number: '#8', isOnField: true },
+                { id: 'cm-7', name: 'Carlos Baleba', position: 'Midfielder', club: 'Brighton', number: '#14', isOnField: true },
+                { id: 'cm-8', name: 'Olivier Kemen', position: 'Midfielder', club: 'İstanbul Başakşehir', number: '#22', isOnField: true },
+                { id: 'cm-9', name: 'Bryan Mbeumo', position: 'Forward', club: 'Brentford', number: '#20', isOnField: true },
+                { id: 'cm-10', name: 'Vincent Aboubakar', position: 'Forward', club: 'Hatayspor', number: '#10', isOnField: true },
+                { id: 'cm-11', name: 'Georges-Kévin N\'Koudou', position: 'Forward', club: 'Damac', number: '#11', isOnField: true },
+                // Bench
+                { id: 'cm-12', name: 'Devis Epassy', position: 'Goalkeeper', club: 'Karagümrük', number: '#1', isOnField: false },
+                { id: 'cm-13', name: 'Enzo Tchato', position: 'Defender', club: 'Montpellier', number: '#17', isOnField: false },
+                { id: 'cm-14', name: 'Malcom Bokele', position: 'Defender', club: 'Göztepe', number: '#2', isOnField: false },
+                { id: 'cm-15', name: 'Yally Kouoh', position: 'Midfielder', club: 'Randers', number: '#18', isOnField: false },
+                { id: 'cm-16', name: 'Faris Pemi Moumbagna', position: 'Forward', club: 'Marseille', number: '#9', isOnField: false },
+                { id: 'cm-17', name: 'Frank Magri', position: 'Forward', club: 'Toulouse', number: '#13', isOnField: false }
+            ]
+        },
+        'DZ': {
+            name: 'Algeria',
+            flag: '🇩🇿',
+            opponent: '🇨🇲 Cameroon (Indomitable Lions)',
+            squad: [
+                { id: 'dz-1', name: 'Anthony Mandréa', position: 'Goalkeeper', club: 'Caen', number: '#23', isOnField: true },
+                { id: 'dz-2', name: 'Youcef Atal', position: 'Defender', club: 'Al-Sadd', number: '#20', isOnField: true },
+                { id: 'dz-3', name: 'Ramy Bensebaini', position: 'Defender', club: 'Borussia Dortmund', number: '#21', isOnField: true },
+                { id: 'dz-4', name: 'Aïssa Mandi', position: 'Defender', club: 'Lille', number: '#2', isOnField: true },
+                { id: 'dz-5', name: 'Rayan Aït-Nouri', position: 'Defender', club: 'Wolverhampton', number: '#15', isOnField: true },
+                { id: 'dz-6', name: 'Ismaël Bennacer', position: 'Midfielder', club: 'AC Milan', number: '#6', isOnField: true },
+                { id: 'dz-7', name: 'Houssem Aouar', position: 'Midfielder', club: 'Al-Ittihad', number: '#8', isOnField: true },
+                { id: 'dz-8', name: 'Farès Chaïbi', position: 'Midfielder', club: 'Eintracht Frankfurt', number: '#14', isOnField: true },
+                { id: 'dz-9', name: 'Riyad Mahrez', position: 'Forward', club: 'Al-Ahli', number: '#7', isOnField: true },
+                { id: 'dz-10', name: 'Baghdad Bounedjah', position: 'Forward', club: 'Al-Shamal', number: '#9', isOnField: true },
+                { id: 'dz-11', name: 'Mohamed Amine Amoura', position: 'Forward', club: 'Wolfsburg', number: '#18', isOnField: true },
+                // Bench
+                { id: 'dz-12', name: 'Alexandre Oukidja', position: 'Goalkeeper', club: 'Metz', number: '#16', isOnField: false },
+                { id: 'dz-13', name: 'Jaouen Hadjam', position: 'Defender', club: 'Young Boys', number: '#3', isOnField: false },
+                { id: 'dz-14', name: 'Mohamed Amine Tougai', position: 'Defender', club: 'Espérance', number: '#4', isOnField: false },
+                { id: 'dz-15', name: 'Nabil Bentaleb', position: 'Midfielder', club: 'Lille', number: '#19', isOnField: false },
+                { id: 'dz-16', name: 'Saïd Benrahma', position: 'Forward', club: 'Lyon', number: '#17', isOnField: false },
+                { id: 'dz-17', name: 'Amine Gouiri', position: 'Forward', club: 'Rennes', number: '#11', isOnField: false }
+            ]
+        }
+    };
+
+    /* ==========================================================================
+       2. QUEUE & MATCH STATE MANAGEMENT
+       ========================================================================== */
+    let currentCountryKey = 'GH';
+    let subQueue = []; // FIFO Queue for bench players awaiting substitution
+    let activeStatusFilter = 'All';
+
+    window.onload = () => {
+        changeMatchFixture();
+    };
+
+    function changeMatchFixture() {
+        const selectElem = document.getElementById('homeCountrySelect');
+        currentCountryKey = selectElem.value;
+        const nation = africanNationsDatabase[currentCountryKey];
+
+        // Update Opponent Fixture UI & Scoreboard
+        document.getElementById('opponentDisplayBox').innerHTML = `<span>${nation.opponent}</span>`;
+        document.getElementById('pitchHomeName').innerHTML = `${nation.flag} ${nation.name}`;
+        document.getElementById('pitchAwayName').innerHTML = nation.opponent;
+        document.getElementById('rosterTitle').innerHTML = `<i class="fa-solid fa-users text-yellow-400"></i><span>${nation.name} Squad Roster (Starting XI & Bench)</span>`;
+
+        // Pre-populate queue with first two bench players from this nation
+        subQueue = [];
+        const benchPlayers = nation.squad.filter(p => !p.isOnField);
+        if (benchPlayers.length >= 2) {
+            subQueue.push(benchPlayers[0]);
+            subQueue.push(benchPlayers[1]);
+        } else if (benchPlayers.length === 1) {
+            subQueue.push(benchPlayers[0]);
+        }
+
+        renderRoster();
+        renderFieldPlayers();
+        renderQueue();
+    }
+
+    /* ==========================================================================
+       3. FIFO QUEUE & SUBSTITUTION ENGINE
+       ========================================================================== */
+    function enqueuePlayer(player) {
+        if (player.isOnField) {
+            showToast(`${player.name} is already on the field!`);
+            return;
+        }
+        if (subQueue.some(p => p.id === player.id)) {
+            showToast(`${player.name} is already in the substitution queue.`);
+            return;
+        }
+
+        subQueue.push(player);
+        renderQueue();
+        showToast(`Queued ${player.name} (${player.number}) to rear of queue`);
+    }
+
+    function subNextPlayer(player) {
+        if (player.isOnField) {
+            showToast(`${player.name} is already on the field!`);
+            return;
+        }
+        subQueue = subQueue.filter(p => p.id !== player.id);
+        
+        subQueue.unshift(player); // Priority push to Index 0
+        renderQueue();
+        showToast(`Set ${player.name} as Next Sub Up (Index 0)!`);
+    }
+
+    function executeSubstitution() {
+        if (subQueue.length === 0) {
+            showToast('Substitution queue is empty! Add players from bench.');
+            return;
+        }
+
+        const nation = africanNationsDatabase[currentCountryKey];
+        // DEQUEUE operation (FIFO shift from front)
+        const subIn = subQueue.shift();
+
+        const fieldPlayerIndex = nation.squad.findIndex(p => p.isOnField && p.position === subIn.position) !== -1 ?
+                                 nation.squad.findIndex(p => p.isOnField && p.position === subIn.position) :
+                                 nation.squad.findIndex(p => p.isOnField);
+
+        if (fieldPlayerIndex !== -1) {
+            const subOut = nation.squad[fieldPlayerIndex];
+            subOut.isOnField = false;
+            subIn.isOnField = true;
+
+            renderRoster();
+            renderFieldPlayers();
+            renderQueue();
+
+            showToast(`⚽ SUB: ${subIn.name} (${subIn.number}) 🔄 Replaces ${subOut.name} (${subOut.number})`);
+        } else {
+            showToast('Error executing substitution.');
+        }
+    }
+
+    function deleteFromQueue(index) {
+        const removed = subQueue.splice(index, 1);
+        renderQueue();
+        if (removed.length) showToast(`Removed ${removed[0].name} from queue`);
+    }
+
+    function moveQueueItem(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= subQueue.length) return;
+        
+        const temp = subQueue[index];
+        subQueue[index] = subQueue[newIndex];
+        subQueue[newIndex] = temp;
+        
+        renderQueue();
+    }
+
+    function clearQueue() {
+        subQueue = [];
+        renderQueue();
+        showToast('Substitution queue cleared');
+    }
+
+    /* ==========================================================================
+       4. SEARCH & FILTER RENDERERS
+       ========================================================================== */
+    function searchPlayers() {
+        renderRoster();
+    }
+
+    function filterStatus(status) {
+        activeStatusFilter = status;
+        
+        document.querySelectorAll('.status-tab').forEach(btn => {
+            if (btn.textContent.includes(status === 'StartingXI' ? 'Starting XI' : status)) {
+                btn.className = 'status-tab bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 px-3 py-1 rounded-full font-medium transition';
+            } else {
+                btn.className = 'status-tab bg-gray-800 text-gray-300 border border-gray-700 px-3 py-1 rounded-full transition hover:bg-gray-700';
+            }
+        });
+
+        renderRoster();
+    }
+
+    function renderRoster() {
+        const nation = africanNationsDatabase[currentCountryKey];
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        
+        const filtered = nation.squad.filter(item => {
+            const matchQuery = item.name.toLowerCase().includes(query) || 
+                               item.club.toLowerCase().includes(query) ||
+                               item.position.toLowerCase().includes(query);
+            
+            const matchStatus = (activeStatusFilter === 'All') || 
+                                (activeStatusFilter === 'StartingXI' && item.isOnField) || 
+                                (activeStatusFilter === 'Bench' && !item.isOnField);
+
+            return matchQuery && matchStatus;
+        });
+
+        const container = document.getElementById('rosterContainer');
+        document.getElementById('rosterCount').textContent = `${filtered.length} players shown`;
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-2 text-center py-10 text-gray-500 text-xs">
+                    <i class="fa-solid fa-user-slash text-2xl mb-2 block"></i>
+                    No player found matching filter.
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = filtered.map(player => {
+            const statusBadge = player.isOnField ? 
+                `<span class="text-[9px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">On Field (XI)</span>` :
+                `<span class="text-[9px] text-amber-400 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">Bench Sub</span>`;
+
+            const actionButtons = player.isOnField ? 
+                `<span class="text-[10px] text-gray-500 italic px-2">Playing</span>` :
+                `
+                <button onclick='subNextPlayer(${JSON.stringify(player)})' title="Sub Next (Index 0)"
+                        class="px-2 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold transition flex items-center gap-1">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>Next</span>
+                </button>
+                <button onclick='enqueuePlayer(${JSON.stringify(player)})' title="Queue to Rear"
+                        class="px-2.5 py-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-gray-950 text-[10px] font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Queue</span>
+                </button>
+                `;
+
+            return `
+                <div class="glass-card p-3 rounded-xl flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <div class="w-9 h-9 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                            ${player.number}
+                        </div>
+                        <div class="overflow-hidden">
+                            <div class="flex items-center gap-1.5">
+                                <h4 class="text-xs font-bold text-gray-100 truncate">${escapeHtml(player.name)}</h4>
+                            </div>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <span class="text-[10px] text-gray-400 truncate">${escapeHtml(player.position)}</span>
+                                ${statusBadge}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                        ${actionButtons}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderFieldPlayers() {
+        const nation = africanNationsDatabase[currentCountryKey];
+        const fieldPlayers = nation.squad.filter(p => p.isOnField);
+        const container = document.getElementById('fieldPlayersContainer');
+        document.getElementById('fieldCountBadge').textContent = `${fieldPlayers.length} / 11 Active`;
+
+        container.innerHTML = fieldPlayers.map(player => `
+            <div class="bg-emerald-900/90 border border-emerald-500/40 px-2 py-1 rounded-lg text-[10px] text-white flex items-center gap-1.5 shadow">
+                <span class="text-yellow-400 font-bold">${player.number}</span>
+                <span class="font-semibold truncate max-w-[95px]">${escapeHtml(player.name)}</span>
+            </div>
+        `).join('');
+    }
+
+    function renderQueue() {
+        const container = document.getElementById('queueContainer');
+        document.getElementById('queueCountBadge').textContent = `${subQueue.length} queued`;
+
+        const nextSubTitle = document.getElementById('nextSubTitle');
+        const nextSubDetail = document.getElementById('nextSubDetail');
+
+        if (subQueue.length > 0) {
+            nextSubTitle.textContent = `${subQueue[0].name} (${subQueue[0].number})`;
+            nextSubDetail.textContent = `Ready to sub in • ${subQueue[0].position} (${subQueue[0].club})`;
+        } else {
+            nextSubTitle.textContent = 'Queue is empty';
+            nextSubDetail.textContent = 'Click "+ Queue" on bench players';
+        }
+
+        if (subQueue.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-6 text-gray-500 text-xs italic border border-dashed border-gray-800 rounded-xl">
+                    <i class="fa-solid fa-clipboard-list text-lg mb-1 block opacity-50"></i>
+                    Substitution queue is empty. Add players from the sub bench!
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = subQueue.map((player, idx) => {
+            const isNextUp = idx === 0;
+            const badgeClass = isNextUp ? 'bg-emerald-500 text-gray-950 font-extrabold' : 'bg-gray-800 text-gray-400';
+            const badgeLabel = isNextUp ? 'SUB READY [0]' : `Index [${idx}]`;
+
+            return `
+                <div class="glass-card p-2.5 rounded-xl flex items-center justify-between gap-2 border ${isNextUp ? 'border-emerald-500/40 bg-emerald-950/20' : ''}">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <span class="text-[10px] px-2 py-0.5 rounded-md ${badgeClass}">${badgeLabel}</span>
+                        <div class="overflow-hidden">
+                            <h5 class="text-xs font-semibold text-gray-200 truncate">${escapeHtml(player.name)} <span class="text-yellow-400">${player.number}</span></h5>
+                            <p class="text-[10px] text-gray-400 truncate">${escapeHtml(player.position)} • ${escapeHtml(player.club)}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                        <button onclick="moveQueueItem(${idx}, -1)" ${idx === 0 ? 'disabled class="opacity-30"' : 'class="hover:text-yellow-400"'} class="p-1 text-xs text-gray-400" title="Move Up">
+                            <i class="fa-solid fa-chevron-up"></i>
+                        </button>
+                        <button onclick="moveQueueItem(${idx}, 1)" ${idx === subQueue.length - 1 ? 'disabled class="opacity-30"' : 'class="hover:text-yellow-400"'} class="p-1 text-xs text-gray-400" title="Move Down">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <button onclick="deleteFromQueue(${idx})" class="p-1 text-xs text-rose-400 hover:text-rose-300 ml-1" title="Remove">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /* ==========================================================================
+       5. UTILITY HELPERS
+       ========================================================================== */
+    function openInfoModal() {
+        document.getElementById('infoModal').classList.remove('hidden');
+    }
+
+    function closeInfoModal() {
+        document.getElementById('infoModal').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 z-50 glass-panel bg-yellow-950/90 border border-yellow-500/40 text-yellow-200 text-xs px-4 py-2.5 rounded-xl shadow-xl transition-all duration-300';
+        toast.innerHTML = `<i class="fa-solid fa-futbol text-yellow-400 mr-2"></i>${escapeHtml(msg)}`;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2200);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+</script>
+
+</body>
+</html>
