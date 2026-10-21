@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>African Nations Pro Match Arena & Dual-Team FIFO Queue</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #080c14;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.85);
+            border-color: rgba(234, 179, 8, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* 11v11 Realistic Football Pitch with Goal Nets */
+        .football-pitch {
+            background: radial-gradient(circle at center, #065f46 0%, #022c22 100%);
+            border: 2px solid rgba(234, 179, 8, 0.5);
+            position: relative;
+            overflow: hidden;
+            height: 340px;
+        }
+
+        .pitch-lines {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 35px 35px;
+            pointer-events: none;
+        }
+
+        .pitch-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75px;
+            height: 75px;
+            border: 2px solid rgba(255,255,255,0.25);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .pitch-center-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: rgba(255,255,255,0.25);
+            pointer-events: none;
+        }
+
+        /* Goal Posts */
+        .goal-left {
+            position: absolute;
+            left: 0;
+            top: 38%;
+            width: 10px;
+            height: 24%;
+            border: 2px solid #fff;
+            border-left: none;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .goal-right {
+            position: absolute;
+            right: 0;
+            top: 38%;
+            width: 10px;
+            height: 24%;
+            border: 2px solid #fff;
+            border-right: none;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Moving Players & Ball */
+        .pitch-player {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+            transition: all 1s ease-in-out;
+            z-index: 5;
+        }
+
+        .home-token { background: #eab308; color: #000; border: 1.5px solid #fff; }
+        .away-token { background: #ef4444; color: #fff; border: 1.5px solid #fff; }
+
+        .football {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #ffffff;
+            transition: all 0.5s ease-in-out;
+            z-index: 10;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #080c14; }
+        ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #eab308; }
+
+        .glow-gold { box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-gray-800 px-4 py-3 sm:px-8">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-500 via-emerald-600 to-red-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg glow-gold">
+                    🌍
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-wide bg-gradient-to-r from-yellow-400 via-emerald-300 to-green-400 bg-clip-text text-transparent">
+                        African Nations Pro Match Arena & FIFO Queue
+                    </h1>
+                    <p class="text-[11px] text-gray-400">11v11 Pitch Simulation, Voice Commentary, Audio & Dual-Team Ratings</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="openInfoModal()" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-yellow-400 border border-yellow-500/30 font-medium flex items-center gap-2 transition">
+                    <i class="fa-solid fa-code-branch"></i>
+                    <span>Queue FIFO Logic</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Layout -->
+    <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+        <!-- LEFT COLUMN: Selectors, Music Uploader & Ratings Board (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-5">
+
+            <!-- Fixture & Music Uploader Card -->
+            <div class="glass-panel p-4 sm:p-5 rounded-2xl space-y-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] text-yellow-400 font-bold uppercase mb-1">Select Home National Team</label>
+                        <select id="homeCountrySelect" onchange="changeMatchFixture()" class="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs font-semibold text-white focus:border-yellow-500 focus:outline-none transition">
+                            <option value="GH">🇬🇭 Ghana (Black Stars)</option>
+                            <option value="NG">🇳🇬 Nigeria (Super Eagles)</option>
+                            <option value="SN">🇸🇳 Senegal (Lions of Teranga)</option>
+                            <option value="MA">🇲🇦 Morocco (Atlas Lions)</option>
+                            <option value="EG">🇪🇬 Egypt (Pharaohs)</option>
+                            <option value="CI">🇨🇮 Ivory Coast (Elephants)</option>
+                            <option value="CM">🇨🇲 Cameroon (Indomitable Lions)</option>
+                            <option value="DZ">🇩🇿 Algeria (Desert Foxes)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] text-yellow-400 font-bold uppercase mb-1">Opponent Team (Click to Inspect)</label>
+                        <div onclick="toggleTeamInspection()" id="opponentDisplayBox" class="cursor-pointer w-full px-3 py-2 rounded-xl bg-gray-900/90 border border-emerald-500/40 text-xs font-bold text-emerald-400 flex items-center justify-between transition hover:bg-gray-800">
+                            <span id="opponentNameText">🇳🇬 Nigeria (Super Eagles)</span>
+                            <span class="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded text-yellow-300">Inspect 🔍</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Background Music Uploader -->
+                <div class="bg-gray-950/80 p-2.5 rounded-xl border border-gray-800 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <i class="fa-solid fa-music text-yellow-400 text-xs"></i>
+                        <span class="text-[11px] text-gray-300 truncate" id="audioFileName">Upload Match Anthem (MP3)</span>
+                    </div>
+                    <label class="cursor-pointer bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold text-[10px] px-2.5 py-1.5 rounded-lg transition whitespace-nowrap">
+                        <i class="fa-solid fa-upload mr-1"></i> Choose Audio
+                        <input type="file" id="bgMusicInput" accept="audio/*" onchange="handleMusicUpload(event)" class="hidden">
+                    </label>
+                    <audio id="matchAudio" loop></audio>
+                </div>
+            </div>
+
+            <!-- Player Ratings Board (5.6 to 8.5 range, ✨ highest, red 🔴 lowest) -->
+            <div class="glass-panel p-4 sm:p-5 rounded-2xl flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 id="ratingsBoardTitle" class="text-sm font-bold text-gray-100 flex items-center gap-2">
+                        <i class="fa-solid fa-star-half-stroke text-yellow-400"></i>
+                        <span>Live Ratings Board (Scale 5.6 - 8.5)</span>
+                    </h2>
+                    <span id="viewingTeamBadge" class="text-[10px] text-yellow-300 bg-yellow-500/20 px-2 py-0.5 rounded border border-yellow-500/30 font-semibold">Viewing Home Team</span>
+                </div>
+
+                <div id="ratingsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto max-h-[260px] pr-1">
+                    <!-- Dynamic Ratings Cards -->
+                </div>
+            </div>
+
+            <!-- Squad Bench & Substitution Pool -->
+            <div class="glass-panel p-4 sm:p-5 rounded-2xl flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 id="rosterTitle" class="text-sm font-bold text-gray-100 flex items-center gap-2">
+                        <i class="fa-solid fa-users text-yellow-400"></i>
+                        <span>Squad Bench & Sub Pool</span>
+                    </h2>
+                    <span id="rosterCount" class="text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded border border-gray-700">0 subs</span>
+                </div>
+
+                <div id="rosterContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto max-h-[160px] pr-1">
+                    <!-- Dynamic Bench Cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: 11v11 Pitch with Goals, Commentary & FIFO Queue (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-5">
+
+            <!-- Live Pitch & Scoreboard Deck -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col items-center text-center relative overflow-hidden glow-gold border-yellow-500/35">
+                
+                <!-- Match Clock & Status Header -->
+                <div class="w-full flex justify-between items-center mb-2 px-1">
+                    <div class="flex items-center gap-1.5 bg-yellow-500/20 border border-yellow-500/40 px-2.5 py-0.5 rounded-full text-yellow-300 text-[10px] font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span>
+                        <span>AFCON QUALIFIER LIVE</span>
+                    </div>
+                    <span id="matchClock" class="text-xs font-mono text-emerald-400 font-bold bg-black/60 px-2.5 py-0.5 rounded">00' MIN</span>
+                </div>
+
+                <!-- Scoreboard -->
+                <div class="bg-black/80 px-4 py-2.5 rounded-xl border border-white/10 mb-3 w-full flex items-center justify-between">
+                    <div class="text-left flex-1">
+                        <p id="pitchHomeName" class="text-xs font-extrabold text-yellow-400 truncate">🇬🇭 Ghana</p>
+                    </div>
+                    <div class="text-center px-3">
+                        <span id="scoreDisplay" class="text-xl font-black text-white">0 - 0</span>
+                    </div>
+                    <div class="text-right flex-1">
+                        <p id="pitchAwayName" class="text-xs font-extrabold text-red-400 truncate">🇳🇬 Nigeria</p>
+                    </div>
+                </div>
+
+                <!-- 11v11 Visual Interactive Pitch with Goal Nets & Moving Ball -->
+                <div class="football-pitch w-full rounded-xl mb-3 shadow-inner" id="pitchArea">
+                    <div class="pitch-lines"></div>
+                    <div class="pitch-center-line"></div>
+                    <div class="pitch-circle"></div>
+                    <div class="goal-left"></div>
+                    <div class="goal-right"></div>
+
+                    <!-- 11 Home Players (GK + 10 Outfield) -->
+                    <div id="hp-0" class="pitch-player home-token" style="top: 48%; left: 3%;" title="GK">GK</div>
+                    <div id="hp-1" class="pitch-player home-token" style="top: 20%; left: 20%;">2</div>
+                    <div id="hp-2" class="pitch-player home-token" style="top: 40%; left: 20%;">3</div>
+                    <div id="hp-3" class="pitch-player home-token" style="top: 60%; left: 20%;">4</div>
+                    <div id="hp-4" class="pitch-player home-token" style="top: 80%; left: 20%;">5</div>
+                    <div id="hp-5" class="pitch-player home-token" style="top: 30%; left: 40%;">6</div>
+                    <div id="hp-6" class="pitch-player home-token" style="top: 50%; left: 38%;">7</div>
+                    <div id="hp-7" class="pitch-player home-token" style="top: 70%; left: 40%;">8</div>
+                    <div id="hp-8" class="pitch-player home-token" style="top: 25%; left: 65%;">9</div>
+                    <div id="hp-9" class="pitch-player home-token" style="top: 50%; left: 68%;">10</div>
+                    <div id="hp-10" class="pitch-player home-token" style="top: 75%; left: 65%;">11</div>
+
+                    <!-- 11 Away Players (GK + 10 Outfield) -->
+                    <div id="ap-0" class="pitch-player away-token" style="top: 48%; right: 3%;" title="GK">GK</div>
+                    <div id="ap-1" class="pitch-player away-token" style="top: 20%; right: 20%;">2</div>
+                    <div id="ap-2" class="pitch-player away-token" style="top: 40%; right: 20%;">3</div>
+                    <div id="ap-3" class="pitch-player away-token" style="top: 60%; right: 20%;">4</div>
+                    <div id="ap-4" class="pitch-player away-token" style="top: 80%; right: 20%;">5</div>
+                    <div id="ap-5" class="pitch-player away-token" style="top: 30%; right: 40%;">6</div>
+                    <div id="ap-6" class="pitch-player away-token" style="top: 50%; right: 38%;">7</div>
+                    <div id="ap-7" class="pitch-player away-token" style="top: 70%; right: 40%;">8</div>
+                    <div id="ap-8" class="pitch-player away-token" style="top: 25%; right: 65%;">9</div>
+                    <div id="ap-9" class="pitch-player away-token" style="top: 50%; right: 68%;">10</div>
+                    <div id="ap-10" class="pitch-player away-token" style="top: 75%; right: 65%;">11</div>
+
+                    <!-- Moving Soccer Ball -->
+                    <div id="matchBall" class="football" style="top: 50%; left: 50%;"></div>
+                </div>
+
+                <!-- Written Commentary & Match Events Ticker -->
+                <div class="w-full bg-gray-950/90 p-2.5 rounded-xl border border-gray-800 text-left mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-microphone-lines text-yellow-400 text-sm animate-pulse flex-shrink-0"></i>
+                    <p id="commentaryBox" class="text-[11px] text-yellow-200 font-medium truncate">Match underway! Both sides locked in 11v11 battle...</p>
+                </div>
+
+                <!-- Next Sub Ready Card -->
+                <div class="w-full bg-gray-950/90 p-3 rounded-xl border border-yellow-500/40 text-left flex items-center justify-between">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <div class="w-9 h-9 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center font-bold text-xs border border-yellow-500/30 flex-shrink-0">
+                            <i class="fa-solid fa-right-left"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <span class="text-[9px] text-yellow-400 font-bold tracking-wider block">NEXT SUB UP [QUEUE HEAD]</span>
+                            <h3 id="nextSubTitle" class="text-xs font-extrabold text-white truncate">No player queued</h3>
+                        </div>
+                    </div>
+                    <button onclick="executeSubstitution()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 text-gray-950 font-extrabold text-xs shadow-lg transition active:scale-95 whitespace-nowrap flex-shrink-0">
+                        Make Sub ⚽
+                    </button>
+                </div>
+            </div>
+
+            <!-- Substitution Queue Structure Card -->
+            <div class="glass-panel p-4 rounded-2xl flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-800">
+                    <div>
+                        <h2 class="text-xs font-bold text-gray-100 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ol text-yellow-400"></i>
+                            <span>Substitution Queue (FIFO)</span>
+                        </h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="queueCountBadge" class="bg-yellow-500/20 text-yellow-300 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500/30 font-semibold">0 queued</span>
+                        <button onclick="clearQueue()" class="text-[10px] text-rose-400 hover:text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20 transition">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Queue List -->
+                <div id="queueContainer" class="flex-1 overflow-y-auto max-h-[140px] space-y-1.5 pr-1">
+                    <!-- Dynamic Queue items -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FIFO Queue Modal with Exact Headings Requested -->
+    <div id="infoModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel bg-gray-900 border-gray-700 max-w-lg w-full rounded-2xl p-6 relative shadow-2xl">
+            <button onclick="closeInfoModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-futbol"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">FIFO Data Structure Documentation</h3>
+                    <p cl
